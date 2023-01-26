@@ -1,6 +1,6 @@
 const log = console.log
 
-const reduce = (f, acc, iter) => {
+const reduce = curry((f, acc, iter) => {
   if (!iter) {
     iter = acc[Symbol.iterator]();
     acc = iter.next().value
@@ -30,14 +30,15 @@ log(list);
 log(reduce(add, list));
 
 // lazy range
-const lRange = function* (l) {
+const L = {}
+L.range = function* (l) {
   let i = -1;
   while (++i < l) {
-    // log(i, 'LRange')
     yield i;
   }
 };
-var list2 = lRange(4); // 내부 로그는 출력되지 앟음
+
+var list2 = L.range(4); // 내부 로그는 출력되지 앟음
 log(list2);
 log(reduce(add, list2)); // reduce로 순회할때 내부 로그 출력 및 평가 진행
 
@@ -50,4 +51,4 @@ function test(name, time, f) {
 }
 
 test('range', 10, () => reduce(add, range(100000)));
-test('lRange', 10, () => lRange(add, range(100000)));
+test('lRange', 10, () => L.range(add, range(100000)));

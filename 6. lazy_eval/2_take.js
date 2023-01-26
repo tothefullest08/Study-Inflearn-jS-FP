@@ -9,12 +9,14 @@ const range = l => {
   return res
 };
 
-const lRange = function* (l) {
+const L = {}
+L.range = function* (l) {
   let i = -1;
   while (++i < l) {
     yield i;
   }
 };
+
 
 const take = (l, iter) => {
   let res = [];
@@ -27,4 +29,4 @@ const take = (l, iter) => {
 };
 
 log(take(5, range(1000000)));
-log(take(5, lRange(1000000)));
+log(take(5, L.range(1000000)));
