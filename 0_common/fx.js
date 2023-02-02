@@ -4,6 +4,9 @@ export const go = (...args) => reduce((a, f) => f(a), args);
 export const pipe = (f, ...fs) => (...as) => go(f(...as), ...fs);
 export const log = console.log
 
+const go1 = (a, f) => a instanceof Promise ? a.then(f) : f(a);
+
+
 // 즉시 평가
 export const range = l => {
   let i = -1;
@@ -15,15 +18,17 @@ export const range = l => {
   return res
 };
 
-export const map = curry((f, iter) => {
-  let res = [];
-  iter = iter[Symbol.iterator]();
-  for (const a of iter) {
-    res.push(f(a));
-  }
+// export const map = curry((f, iter) => {
+//   let res = [];
+//   iter = iter[Symbol.iterator]();
+//   for (const a of iter) {
+//     res.push(f(a));
+//   }
+//
+//   return res;
+// });
 
-  return res;
-});
+
 
 export const filter = curry((f, iter) => {
   let res = [];
@@ -44,13 +49,11 @@ L.range = function* (l) {
 };
 
 L.map = curry(function* (f, iter) {
-  iter = iter[Symbol.iterator]();
-  let cur;
-  while (!(cur = iter.next()).done) {
-    const a = cur.value;
-    yield f(a);
+  for (const a of iter) {
+    yield go1(a, f);
   }
 });
+
 
 L.filter = curry(function* (f, iter) {
   iter = iter[Symbol.iterator]();
@@ -74,7 +77,6 @@ export const find = curry((f, iter) => go(
   ([a]) => a
 ));
 
-const go1 = (a, f) => a instanceof Promise ? a.then(f) : f(a)
 
 export const reduce = curry((f, acc, iter) => {
   if (!iter) {
@@ -92,15 +94,29 @@ export const reduce = curry((f, acc, iter) => {
 
 export const take = curry((l, iter) => {
   let res = [];
-  for (const a of iter) {
-    res.push(a);
-    if (res.length === l) return res;
-  }
+  iter = iter[Symbol.iterator]();
+  return function recur() {
+    let cur;
+    while (!(cur = iter.next()).done) {
+      const a = cur.value;
+      if (a instanceof Promise) {
+        return a.then(a => {
+          res.push(a);
+          if (res.length === l) return res;
+          return recur();
+        });
+      }
+      res.push(a);
+      if (res.length === l) return res;
+    }
 
-  return res;
+    return res;
+  } ()
 });
 
 export const takeAll = take(Infinity);
+
+export const map = curry(pipe(L.map, takeAll));
 
 L.flatten = function *(iter) {
   for (const a of iter) {
